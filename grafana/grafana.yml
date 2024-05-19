@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+      - name: grafana
+        image: grafana/grafana:latest
+        ports:
+        - containerPort: 3000
+        resources:
+          requests:
+            cpu: "100m"   # Request 100 millicpu (0.1 CPU)
+            memory: "128Mi"  # Request 128 MiB memory
+          limits:
+            cpu: "200m"   # Limit to 200 millicpu (0.2 CPU)
+            memory: "256Mi"  # Limit to 256 MiB memory
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-grafana
+  namespace: monitoring
+spec:
+  selector:
+    app: grafana
+  ports:
+  - protocol: TCP
+    port: 3000
+    targetPort: 3000
+
+---
+apiVersion: networking.k8s.io/v1
+kind: IngressClass
+metadata:
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: ingress-nginx
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: ingress-nginx
+    app.kubernetes.io/version: 1.10.0
+  name: nginx-grafana
+  namespace: monitoring
+spec:
+  controller: k8s.io/ingress-nginx
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana-ingress
+  namespace: monitoring
+  annotations:
+    kubernetes.io/ingress.allow-http: "false"
+spec:
+  ingressClassName: nginx-grafana
+  rules:
+  - host: grafana.cobasaja.biz.id  # Replace with your domain or IP
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: service-grafana
+            port:
+              number: 3000

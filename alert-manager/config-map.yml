@@ -1,0 +1,25 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: alertmanager-config
+  namespace: monitoring
+data:
+  config.yml: |-
+    global:
+      resolve_timeout: 1m
+    route:
+      receiver: default-telegram
+      group_wait: 3s
+      group_interval: 20s
+      repeat_interval: 20s
+      group_by: ['alertname', 'priority']
+      routes:
+        - receiver: default-telegram
+          match:
+            severity: critical   # Corrected typo
+
+    receivers:
+    - name: default-telegram
+      telegram_configs:
+      - bot_token: 6488746196:AAFaZibqg9WQG8qlurT9b-7ANnboRSF20-E
+        chat_id: -4139655631
